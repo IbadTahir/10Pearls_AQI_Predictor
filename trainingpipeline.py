@@ -111,19 +111,15 @@ def compute_shap_explanations(model: MultiHorizonXGBoost, X_sample: pd.DataFrame
         sample = X_sample.sample(min(len(X_sample), 100), random_state=42)
         base_estimator = model.estimators_[24]
 
-        try:
-            explainer = shap.TreeExplainer(base_estimator)
-            shap_values = explainer.shap_values(sample)
-        except Exception:
-            explainer = shap.Explainer(base_estimator, sample)
-            shap_values = explainer(sample).values
+        explainer = shap.TreeExplainer(base_estimator)
+        shap_values = explainer(sample).values
 
         vals = np.abs(shap_values).mean(axis=0)
-        mean_abs_shap = {feat: float(val) for feat, val in zip(feature_names, vals)}
+        mean_abs_shap = {feat: round(float(val), 4) for feat, val in zip(feature_names, vals)}
         sorted_shap = dict(sorted(mean_abs_shap.items(), key=lambda item: item[1], reverse=True)[:25])
         return sorted_shap
     except Exception as e:
-        print(f"Notice: SHAP computation note ({e})")
+        print(f"Notice: SHAP computation error ({e})")
         return {}
 
 
