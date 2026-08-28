@@ -249,7 +249,7 @@ def render_alert_banner(current_aqi: float, preds: np.ndarray):
 
 def main():
     st.set_page_config(
-        page_title="Pearls AQI Predictor",
+        page_title="AQI Predictor",
         page_icon="🌍",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -700,5 +700,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
     main()
