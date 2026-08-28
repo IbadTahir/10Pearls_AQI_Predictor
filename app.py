@@ -266,24 +266,12 @@ def main():
     def on_header_change():
         st.session_state["selected_city"] = st.session_state["header_city_selector"]
 
-    def on_sidebar_change():
-        st.session_state["selected_city"] = st.session_state["sidebar_city_selector"]
-
     # -------------------------------------------------------------------------
     # Sidebar
     # -------------------------------------------------------------------------
     with st.sidebar:
         st.header("⚙️ Target Controls")
-        current_idx = city_list.index(st.session_state["selected_city"])
-        st.selectbox(
-            "📍 **Select City:**",
-            options=city_list,
-            index=current_idx,
-            key="sidebar_city_selector",
-            on_change=on_sidebar_change,
-        )
-
-        st.markdown(f"Active City: **{st.session_state['selected_city']}**")
+        st.info(f"📍 Active City: **{st.session_state['selected_city']}**")
 
         if st.button("🔄 Refresh Data & Model", use_container_width=True):
             get_cached_features.clear()
@@ -301,12 +289,12 @@ def main():
             "- **CI/CD Integration**: GitHub Actions"
         )
         st.markdown("---")
-        st.caption("Pearls AQI Prediction System • v2.4")
+        st.caption("AQI Prediction System • v2.4")
 
     # -------------------------------------------------------------------------
     # Main Header
     # -------------------------------------------------------------------------
-    st.title("🌍 Pearls AQI Predictor")
+    st.title("🌍 AQI Predictor")
     st.caption("End-to-End Machine Learning System for 3-Day Air Quality Index Forecasting in Pakistan")
 
     # Dual Synchronized Header City Switcher
