@@ -263,41 +263,74 @@ def main():
     if "selected_city" not in st.session_state:
         st.session_state["selected_city"] = city_list[0]
 
-    def on_header_change():
-        st.session_state["selected_city"] = st.session_state["header_city_selector"]
+    # Load Data & Model
+    with st.spinner("Connecting to Supabase Warehouse & Loading XGBoost Model..."):
+        try:
+            df = get_cached_features()
+            model_assets = get_cached_model()
+        except Exception as exc:
+            st.error(f"Error loading system assets: {exc}")
+            st.info("Run `python historical_backfill.py` and `python trainingpipeline.py` to initialize data and models.")
+            return
+
+    if df.empty:
+        st.warning("No records found in Supabase 'aqi_features' table. Run historical backfill to populate.")
+        return
+
+    city_df = df[df["city"] == st.session_state["selected_city"]].sort_values("datetime").copy()
+    if city_df.empty:
+        st.warning(f"No records available for {st.session_state['selected_city']}.")
+        return
+
+    # Build inference row with full lag continuity
+    X_infer, latest_row = build_inference_row(model_assets["feature_names"], st.session_state["selected_city"], city_df)
+    preds = predict_horizons(model_assets, X_infer)
+
+    current_aqi = float(latest_row[TARGET_COL])
+    latest_time = pd.to_datetime(latest_row["datetime"])
 
     # -------------------------------------------------------------------------
     # Sidebar
     # -------------------------------------------------------------------------
     with st.sidebar:
-        st.header("⚙️ Target Controls")
+        st.header("⚙️ System Overview")
         st.info(f"📍 Active City: **{st.session_state['selected_city']}**")
 
-        if st.button("🔄 Refresh Data & Model", use_container_width=True):
+        st.subheader("🌤️ Live Telemetry")
+        temp_val = latest_row.get("temperature_2m", np.nan)
+        rh_val = latest_row.get("relative_humidity_2m", np.nan)
+        wind_val = latest_row.get("wind_speed_10m", np.nan)
+        press_val = latest_row.get("surface_pressure", np.nan)
+
+        st.markdown(f"- **Temperature:** `{temp_val:.1f} °C`" if pd.notna(temp_val) else "- **Temperature:** `N/A`")
+        st.markdown(f"- **Humidity:** `{rh_val:.1f} %`" if pd.notna(rh_val) else "- **Humidity:** `N/A`")
+        st.markdown(f"- **Wind Speed:** `{wind_val:.1f} km/h`" if pd.notna(wind_val) else "- **Wind Speed:** `N/A`")
+        st.markdown(f"- **Surface Pressure:** `{press_val:.1f} hPa`" if pd.notna(press_val) else "- **Surface Pressure:** `N/A`")
+
+        st.markdown("---")
+        st.subheader("🌐 MLOps Architecture")
+        st.markdown(
+            "- **Model**: `Multi-Horizon XGBoost`\n"
+            "- **Features**: `84 Atmospheric & Lag Terms`\n"
+            "- **Feature Store**: `Supabase PostgreSQL`\n"
+            "- **CI/CD Automation**: `GitHub Actions`\n"
+            "- **Live Ingestion**: `Hourly (Open-Meteo / CAMS)`"
+        )
+        st.markdown("---")
+        if st.button("🔄 Refresh Data & Model", key="sidebar_refresh_btn", use_container_width=True):
             get_cached_features.clear()
             get_cached_model.clear()
             st.rerun()
 
-        st.markdown("---")
-        st.subheader("🌐 System Architecture")
-        st.markdown(
-            "- **Data Warehouse**: Supabase PostgreSQL\n"
-            "- **Model Registry**: Supabase Storage\n"
-            "- **Algorithm**: Multi-Horizon XGBoost Ensemble\n"
-            "- **Feature Dimensions**: 84 Atmospheric & Lag Terms\n"
-            "- **Live Data**: Open-Meteo & CAMS APIs\n"
-            "- **CI/CD Integration**: GitHub Actions"
-        )
-        st.markdown("---")
-        st.caption("AQI Prediction System • v2.4")
-
     # -------------------------------------------------------------------------
-    # Main Header
+    # Main Header & City Switcher
     # -------------------------------------------------------------------------
     st.title("🌍 AQI Predictor")
     st.caption("End-to-End Machine Learning System for 3-Day Air Quality Index Forecasting in Pakistan")
 
-    # Dual Synchronized Header City Switcher
+    def on_header_change():
+        st.session_state["selected_city"] = st.session_state["header_city_selector"]
+
     head_col1, head_col2 = st.columns([3, 1])
     with head_col1:
         current_idx = city_list.index(st.session_state["selected_city"])
@@ -316,32 +349,6 @@ def main():
             get_cached_features.clear()
             get_cached_model.clear()
             st.rerun()
-
-    # Load Data & Model
-    with st.spinner("Connecting to Supabase Warehouse & Loading XGBoost Model..."):
-        try:
-            df = get_cached_features()
-            model_assets = get_cached_model()
-        except Exception as exc:
-            st.error(f"Error loading system assets: {exc}")
-            st.info("Run `python historical_backfill.py` and `python trainingpipeline.py` to initialize data and models.")
-            return
-
-    if df.empty:
-        st.warning("No records found in Supabase 'aqi_features' table. Run historical backfill to populate.")
-        return
-
-    city_df = df[df["city"] == selected_city].sort_values("datetime").copy()
-    if city_df.empty:
-        st.warning(f"No records available for {selected_city}.")
-        return
-
-    # Build inference row with full lag continuity
-    X_infer, latest_row = build_inference_row(model_assets["feature_names"], selected_city, city_df)
-    preds = predict_horizons(model_assets, X_infer)
-
-    current_aqi = float(latest_row[TARGET_COL])
-    latest_time = pd.to_datetime(latest_row["datetime"])
 
     # EPA Alert Banner
     render_alert_banner(current_aqi, preds)
