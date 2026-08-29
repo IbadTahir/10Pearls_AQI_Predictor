@@ -11,6 +11,9 @@ import pandas as pd
 from supabase import Client, create_client
 import model_architecture
 
+import base64
+import io
+
 from config import (
     SUPABASE_BUCKET_MODELS,
     SUPABASE_KEY,
@@ -219,11 +222,21 @@ def save_model_to_supabase(
         except Exception as e:
             print(f"Warning: could not upload {file_path.name} to Supabase Storage ({e}). Local backup retained.")
 
+    # Serialize model to compressed base64 for universal database persistence
+    model_payload_b64 = None
+    if not is_keras:
+        try:
+            buf = io.BytesIO()
+            joblib.dump(model, buf, compress=3)
+            model_payload_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        except Exception as e:
+            print(f"Notice: model payload compression: {e}")
+
     registry_entry = {
         "model_name": model_name,
         "version": new_version,
         "avg_rmse": float(metrics.get("avg_rmse", 0.0)),
-        "metrics": metrics,
+        "metrics": {**metrics, "model_payload": model_payload_b64} if model_payload_b64 else metrics,
         "feature_names": feature_names,
         "shap_summary": shap_summary or {},
         "storage_path": storage_folder,
@@ -237,43 +250,64 @@ def save_model_to_supabase(
 
 def load_latest_model(model_name: Optional[str] = None) -> Dict[str, Any]:
     """
-    Load the best active model from Supabase Storage / local cache.
+    Load the best active model from Supabase PostgreSQL model_payload / Storage / local cache.
     """
     client = get_supabase()
 
     query = client.table(SUPABASE_TABLE_MODELS).select("*").eq("is_active", True)
     if model_name:
         query = query.eq("model_name", model_name)
-    query = query.order("avg_rmse", desc=False).order("version", desc=True).limit(1)
+    query = query.order("version", desc=True).limit(10)
 
     resp = query.execute()
-    if not resp.data:
-        local_dirs = sorted(Path("models").glob("*_v*"))
-        if not local_dirs:
-            raise RuntimeError("No model found in Supabase model_registry or local models directory.")
-        latest_dir = local_dirs[-1]
-        return _load_from_local_dir(latest_dir, name="local_fallback")
+    if resp.data:
+        for record in resp.data:
+            # Check 1: Direct database model_payload
+            metrics_dict = record.get("metrics") or {}
+            model_b64 = metrics_dict.get("model_payload")
+            if model_b64:
+                try:
+                    raw_bytes = base64.b64decode(model_b64)
+                    model_obj = joblib.load(io.BytesIO(raw_bytes))
+                    local_dir = Path("models") / f"{record['model_name']}_v{record['version']}"
+                    local_dir.mkdir(parents=True, exist_ok=True)
+                    joblib.dump(model_obj, local_dir / "model.pkl")
+                    if record.get("feature_names"):
+                        joblib.dump(record["feature_names"], local_dir / "feature_names.pkl")
+                    if record.get("shap_summary"):
+                        joblib.dump(record["shap_summary"], local_dir / "shap_summary.pkl")
+                    return {
+                        "model": model_obj,
+                        "model_type": "sklearn",
+                        "scaler": None,
+                        "feature_names": record["feature_names"],
+                        "shap_summary": record.get("shap_summary", {}),
+                        "model_name": f"{record['model_name']} v{record['version']}",
+                        "metrics": record.get("metrics", {}),
+                    }
+                except Exception as e:
+                    print(f"Notice decoding database model payload: {e}")
 
-    record = resp.data[0]
-    storage_folder = record.get("storage_path")
-    local_dir = Path("models") / f"{record['model_name']}_v{record['version']}"
-    local_dir.mkdir(parents=True, exist_ok=True)
+            # Check 2: Local folder
+            local_dir = Path("models") / f"{record['model_name']}_v{record['version']}"
+            if (local_dir / "model.pkl").exists() or (local_dir / "model.keras").exists():
+                try:
+                    return _load_from_local_dir(local_dir, name=f"{record['model_name']} v{record['version']}", record=record)
+                except Exception:
+                    pass
 
-    if storage_folder:
-        try:
-            files = client.storage.from_(SUPABASE_BUCKET_MODELS).list(storage_folder)
-            for file_info in files:
-                file_name = file_info["name"]
-                dest_path = local_dir / file_name
-                if not dest_path.exists():
-                    remote_file_path = f"{storage_folder}/{file_name}"
-                    res = client.storage.from_(SUPABASE_BUCKET_MODELS).download(remote_file_path)
-                    with open(dest_path, "wb") as f:
-                        f.write(res)
-        except Exception as e:
-            print(f"Notice: Loading from local files if available: {e}")
+    # Fallback to latest local xgboost model
+    local_xgboost_dirs = sorted(Path("models").glob("aqi_forecast_xgboost_v*"))
+    for d in reversed(local_xgboost_dirs):
+        if (d / "model.pkl").exists():
+            return _load_from_local_dir(d, name=d.name)
 
-    return _load_from_local_dir(local_dir, name=f"{record['model_name']} v{record['version']}", record=record)
+    local_dirs = sorted(Path("models").glob("*_v*"))
+    for d in reversed(local_dirs):
+        if (d / "model.pkl").exists() or (d / "model.keras").exists():
+            return _load_from_local_dir(d, name=d.name)
+
+    raise RuntimeError("No valid model file found in Supabase model_registry or local models directory.")
 
 
 def _load_from_local_dir(
