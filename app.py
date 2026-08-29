@@ -93,16 +93,10 @@ def get_cached_features() -> pd.DataFrame:
     return df
 
 
-@st.cache_resource(ttl=1800, show_spinner=False)
+@st.cache_resource(ttl=60, show_spinner=False)
 def get_cached_model() -> Dict[str, Any]:
     """Load the active XGBoost model from Supabase / local registry."""
-    try:
-        return load_latest_model("aqi_forecast_xgboost")
-    except Exception:
-        try:
-            return load_latest_model("aqi_forecast_champion")
-        except Exception:
-            return load_latest_model()
+    return load_latest_model("aqi_forecast_xgboost")
 
 
 # Inference Helpers
