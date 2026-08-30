@@ -2,8 +2,8 @@ name: Hourly Live Feature Pipeline
 
 on:
   schedule:
-    # Run every 30 minutes at off-peak minutes to avoid GitHub Actions top-of-hour queue delays
-    - cron: '*/30 * * * *'
+    # Run automatically once every hour (at minute 15 of every hour)
+    - cron: '15 * * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:

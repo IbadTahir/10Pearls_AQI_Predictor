@@ -2,10 +2,9 @@ name: Daily Model Training Pipeline
 
 on:
   schedule:
-    # Run every day at 00:30 UTC (Avoids midnight top-of-hour congestion)
-    - cron: '30 0 * * *'
+    # Run automatically once every 24 hours (Daily at midnight 00:00 UTC)
+    - cron: '0 0 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
-
 jobs:
   run-training-pipeline:
     runs-on: ubuntu-latest
