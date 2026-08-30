@@ -104,22 +104,34 @@ def train_xgboost(X_train: pd.DataFrame, y_train: pd.DataFrame):
 
 
 def compute_shap_explanations(model: MultiHorizonXGBoost, X_sample: pd.DataFrame, feature_names: list[str]) -> dict:
-    """Compute Tree SHAP feature importance summary."""
+    """Compute Tree SHAP feature importance summary with native feature importance fallback."""
+    base_estimator = model.estimators_[24]
+    
+    # 1. Primary: Tree SHAP feature importance
     try:
         import shap
 
-        sample = X_sample.sample(min(len(X_sample), 100), random_state=42)
-        base_estimator = model.estimators_[24]
-
+        sample = X_sample.sample(min(len(X_sample), 100), random_state=42).astype("float64")
         explainer = shap.TreeExplainer(base_estimator)
-        shap_values = explainer(sample).values
+        res = explainer(sample)
+        shap_vals = res.values if hasattr(res, "values") else res
 
-        vals = np.abs(shap_values).mean(axis=0)
+        vals = np.abs(shap_vals).mean(axis=0)
         mean_abs_shap = {feat: round(float(val), 4) for feat, val in zip(feature_names, vals)}
         sorted_shap = dict(sorted(mean_abs_shap.items(), key=lambda item: item[1], reverse=True)[:25])
-        return sorted_shap
+        if sorted_shap:
+            return sorted_shap
     except Exception as e:
-        print(f"Notice: SHAP computation error ({e})")
+        print(f"Notice: Tree SHAP computation note ({e}), using native tree gain importance fallback.")
+
+    # 2. Resilient Fallback: XGBoost built-in feature gain / importances
+    try:
+        raw_importances = base_estimator.feature_importances_
+        imp_dict = {feat: round(float(val), 4) for feat, val in zip(feature_names, raw_importances)}
+        sorted_imp = dict(sorted(imp_dict.items(), key=lambda item: item[1], reverse=True)[:25])
+        return sorted_imp
+    except Exception as e2:
+        print(f"Notice: Feature importance fallback error ({e2})")
         return {}
 
 
