@@ -43,6 +43,19 @@ WEATHER_HOURLY_VARS = [
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+# Streamlit Community Cloud secrets compatibility
+if not SUPABASE_URL or not SUPABASE_KEY:
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            if "SUPABASE_URL" in st.secrets:
+                SUPABASE_URL = str(st.secrets["SUPABASE_URL"])
+            if "SUPABASE_KEY" in st.secrets:
+                SUPABASE_KEY = str(st.secrets["SUPABASE_KEY"])
+    except Exception:
+        pass
+
 SUPABASE_TABLE_FEATURES = os.getenv("SUPABASE_TABLE_FEATURES", "aqi_features")
 SUPABASE_TABLE_MODELS = os.getenv("SUPABASE_TABLE_MODELS", "model_registry")
 SUPABASE_BUCKET_MODELS = os.getenv("SUPABASE_BUCKET_MODELS", "model-registry")
