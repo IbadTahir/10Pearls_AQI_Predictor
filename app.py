@@ -79,6 +79,28 @@ CUSTOM_CSS = """
         font-weight: 600 !important;
     }
 
+    /* Sidebar Specific Compact Metric Boxes (Prevents Truncation / Ellipsis) */
+    section[data-testid="stSidebar"] div[data-testid="stMetric"] {
+        padding: 8px 8px !important;
+        border-radius: 12px !important;
+        min-height: 64px !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stMetric"] * {
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stMetric"] label {
+        font-size: 0.68rem !important;
+        letter-spacing: 0.02em !important;
+        white-space: nowrap !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        font-size: 1.05rem !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.01em !important;
+        white-space: nowrap !important;
+    }
+
     /* Category Badge Tag */
     .aqi-tag {
         display: inline-block;
@@ -554,8 +576,8 @@ def main():
             st.metric("Temperature", f"{temp_val:.1f} °C" if pd.notna(temp_val) else "N/A")
             st.metric("Wind Speed", f"{wind_val:.1f} km/h" if pd.notna(wind_val) else "N/A")
         with t_c2:
-            st.metric("Humidity", f"{rh_val:.1f} %" if pd.notna(rh_val) else "N/A")
-            st.metric("Pressure", f"{press_val:.1f} hPa" if pd.notna(press_val) else "N/A")
+            st.metric("Humidity", f"{rh_val:.1f}%" if pd.notna(rh_val) else "N/A")
+            st.metric("Pressure", f"{press_val:.0f} hPa" if pd.notna(press_val) else "N/A")
 
         st.markdown("---")
         st.subheader("🌐 MLOps Architecture")
