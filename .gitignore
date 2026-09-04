@@ -31,5 +31,4 @@ ENV/
 Thumbs.db
 
 # Streamlit Local Cache
-.streamlit/*
-!.streamlit/config.toml
+.streamlit/

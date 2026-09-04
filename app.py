@@ -25,58 +25,187 @@ FEATURE_CACHE_TTL_SECONDS = 180  # 3 minutes
 
 CUSTOM_CSS = """
 <style>
-    /* Metric Card Styling */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    /* Global Typography & Background */
+    html, body, [class*="css"], .stMarkdown, .stText, .stRadio, .stButton, div {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .stApp {
+        background: radial-gradient(circle at 12% 15%, rgba(14, 165, 233, 0.07) 0%, transparent 42%),
+                    radial-gradient(circle at 88% 20%, rgba(99, 102, 241, 0.07) 0%, transparent 45%),
+                    radial-gradient(circle at 50% 88%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+                    #080c14;
+        color: #f1f5f9;
+    }
+
+    /* Executive Glassmorphic Metric Cards */
     div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 16px 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        backdrop-filter: blur(8px);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.09) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+        border-radius: 16px !important;
+        padding: 18px 22px !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(14px) !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     div[data-testid="stMetric"]:hover {
-        border-color: rgba(255, 255, 255, 0.25);
-        transform: translateY(-2px);
-        transition: all 0.2s ease-in-out;
+        border-color: rgba(56, 189, 248, 0.45) !important;
+        transform: translateY(-4px) scale(1.008) !important;
+        box-shadow: 0 20px 35px -8px rgba(14, 165, 233, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
     }
     div[data-testid="stMetric"] label {
-        font-size: 0.9rem !important;
-        color: #a0aec0 !important;
-        font-weight: 500;
+        font-size: 0.82rem !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.04em !important;
+        text-transform: uppercase !important;
     }
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        font-size: 2.2rem !important;
-        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 2.35rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em !important;
+        background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-    
+    div[data-testid="stMetric"] div[data-testid="stMetricDelta"] {
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+    }
+
     /* Category Badge Tag */
     .aqi-tag {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-top: 4px;
-        color: #000;
+        padding: 4px 14px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        margin-top: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        color: #0b0f19;
     }
-    
-    /* Precaution Card */
+
+    /* Modern Precaution & Forecast Cards */
     .precaution-card {
-        background: rgba(255, 255, 255, 0.03);
-        border-left: 4px solid #3182ce;
-        border-radius: 8px;
-        padding: 14px 18px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 5px solid #38bdf8;
+        border-radius: 16px;
+        padding: 20px 22px;
         margin: 10px 0px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.4);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
-    /* Tab Styling */
+    .precaution-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.55);
+    }
+    .precaution-card h4 {
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 2px;
+    }
+
+    /* Tab Styling - Modern Segmented Controller */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        background: rgba(255, 255, 255, 0.025);
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        gap: 6px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
     }
     .stTabs [data-baseweb="tab"] {
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
+        padding: 10px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: #94a3b8;
+        transition: all 0.2s ease;
+        border: none !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #f8fafc;
+        background: rgba(255, 255, 255, 0.045);
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.22) 100%) !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(56, 189, 248, 0.4) !important;
+        box-shadow: 0 4px 16px rgba(14, 165, 233, 0.25);
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* Sleek Button Styling */
+    .stButton > button {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #f1f5f9 !important;
+        font-weight: 600 !important;
+        border-radius: 12px !important;
+        padding: 8px 20px !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.28) 0%, rgba(99, 102, 241, 0.28) 100%) !important;
+        border-color: rgba(56, 189, 248, 0.5) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 22px -4px rgba(14, 165, 233, 0.35) !important;
+        color: #ffffff !important;
+    }
+
+    /* Alert Banner Polish */
+    .stAlert {
+        border-radius: 14px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(12px) !important;
+        box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    /* Sidebar Refinement */
+    section[data-testid="stSidebar"] {
+        background: #0b0f19 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+    }
+    section[data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Dataframe Container */
+    div[data-testid="stDataFrame"] {
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
     }
 
     /* =========================================================================
@@ -420,10 +549,13 @@ def main():
         wind_val = latest_row.get("wind_speed_10m", np.nan)
         press_val = latest_row.get("surface_pressure", np.nan)
 
-        st.markdown(f"- **Temperature:** `{temp_val:.1f} °C`" if pd.notna(temp_val) else "- **Temperature:** `N/A`")
-        st.markdown(f"- **Humidity:** `{rh_val:.1f} %`" if pd.notna(rh_val) else "- **Humidity:** `N/A`")
-        st.markdown(f"- **Wind Speed:** `{wind_val:.1f} km/h`" if pd.notna(wind_val) else "- **Wind Speed:** `N/A`")
-        st.markdown(f"- **Surface Pressure:** `{press_val:.1f} hPa`" if pd.notna(press_val) else "- **Surface Pressure:** `N/A`")
+        t_c1, t_c2 = st.columns(2)
+        with t_c1:
+            st.metric("Temperature", f"{temp_val:.1f} °C" if pd.notna(temp_val) else "N/A")
+            st.metric("Wind Speed", f"{wind_val:.1f} km/h" if pd.notna(wind_val) else "N/A")
+        with t_c2:
+            st.metric("Humidity", f"{rh_val:.1f} %" if pd.notna(rh_val) else "N/A")
+            st.metric("Pressure", f"{press_val:.1f} hPa" if pd.notna(press_val) else "N/A")
 
         st.markdown("---")
         st.subheader("🌐 MLOps Architecture")
@@ -443,8 +575,26 @@ def main():
     # -------------------------------------------------------------------------
     # Main Header & City Switcher
     # -------------------------------------------------------------------------
-    st.title("🌍 AQI Predictor")
-    st.caption("End-to-End Machine Learning System for 3-Day Air Quality Index Forecasting in Pakistan")
+    st.markdown(
+        """
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 6px;">
+            <div>
+                <h1 style="margin: 0; font-size: 2.3rem; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    🌍 AQI Predictor
+                </h1>
+                <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.95rem; font-weight: 500;">
+                    Automated Machine Learning System for 3-Day Air Quality Index Forecasting in Pakistan
+                </p>
+            </div>
+            <div style="margin-top: 8px;">
+                <span style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #10b981; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em;">
+                    ● LIVE PRODUCTION MODEL
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     def on_header_change():
         st.session_state["selected_city"] = st.session_state["header_city_selector"]
@@ -510,7 +660,14 @@ def main():
     )
 
     st.markdown(
-        f"*Active Model: `{model_assets['model_name']}` | City: **{selected_city}** | Latest Timestamp: `{latest_time.strftime('%Y-%m-%d %H:%M UTC')}`*"
+        f"""
+        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 8px 16px; margin: 12px 0 18px 0; font-size: 0.85rem; color: #94a3b8; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span>🤖 <b>Model:</b> <code style="color: #38bdf8;">{model_assets['model_name']}</code></span>
+            <span>📍 <b>City:</b> <b style="color: #f1f5f9;">{selected_city}</b></span>
+            <span>⏱️ <b>Data Updated:</b> <code style="color: #cbd5e1;">{latest_time.strftime('%Y-%m-%d %H:%M UTC')}</code></span>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     # -------------------------------------------------------------------------
@@ -573,7 +730,15 @@ def main():
         fig.add_hline(y=100, line_dash="dot", line_color="#FFFF00", annotation_text="Moderate (100)")
         fig.add_hline(y=150, line_dash="dash", line_color="#FF0000", annotation_text="Unhealthy (150)")
         fig.add_hline(y=200, line_dash="dash", line_color="#8F3F97", annotation_text="Very Unhealthy (200)")
-        fig.update_layout(hovermode="x unified", legend_title="")
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font={"family": "Plus Jakarta Sans, sans-serif"},
+            hovermode="x unified",
+            legend_title="",
+            margin=dict(l=10, r=10, t=50, b=20),
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("### 🗓️ 3-Day Daily Actionable Health Outlook")
@@ -642,7 +807,15 @@ def main():
                     title=f"Feature Contribution Waterfall - {selected_city}",
                     hover_data=["Feature Value"],
                 )
-                fig_local.update_layout(yaxis={"categoryorder": "total ascending"}, hovermode="closest")
+                fig_local.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font={"family": "Plus Jakarta Sans, sans-serif"},
+                    yaxis={"categoryorder": "total ascending"},
+                    hovermode="closest",
+                    margin=dict(l=10, r=10, t=50, b=20),
+                )
                 st.plotly_chart(fig_local, use_container_width=True)
 
                 st.dataframe(
@@ -670,6 +843,13 @@ def main():
                     color="Mean |SHAP Value|",
                     color_continuous_scale="Viridis",
                 )
+                fig_shap.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font={"family": "Plus Jakarta Sans, sans-serif"},
+                    margin=dict(l=10, r=10, t=50, b=20),
+                )
                 st.plotly_chart(fig_shap, use_container_width=True)
             else:
                 st.info("Global SHAP summary is saved during model registration (`python trainingpipeline.py`).")
@@ -692,6 +872,13 @@ def main():
                 title=f"Individual Pollutant Trends (µg/m³) - {selected_city}",
                 labels={"value": "Concentration (µg/m³)", "variable": "Pollutant", "datetime": "Timestamp"},
             )
+            fig_pollutants.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font={"family": "Plus Jakarta Sans, sans-serif"},
+                margin=dict(l=10, r=10, t=50, b=20),
+            )
             st.plotly_chart(fig_pollutants, use_container_width=True)
 
         eda_row1, eda_row2 = st.columns(2)
@@ -709,6 +896,13 @@ def main():
                     color_continuous_scale="RdBu_r",
                     title=f"Correlation Matrix ({selected_city})",
                 )
+                fig_corr.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font={"family": "Plus Jakarta Sans, sans-serif"},
+                    margin=dict(l=10, r=10, t=50, b=20),
+                )
                 st.plotly_chart(fig_corr, use_container_width=True)
 
         with eda_row2:
@@ -723,6 +917,13 @@ def main():
                 labels={"hour_local": "Hour (0-23 UTC)", TARGET_COL: "Average AQI"},
                 color=TARGET_COL,
                 color_continuous_scale="Reds",
+            )
+            fig_diurnal.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font={"family": "Plus Jakarta Sans, sans-serif"},
+                margin=dict(l=10, r=10, t=50, b=20),
             )
             st.plotly_chart(fig_diurnal, use_container_width=True)
 
