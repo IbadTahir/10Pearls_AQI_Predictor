@@ -177,20 +177,26 @@ The screenshot below illustrates the live production Supabase `model_registry` t
 
 ---
 
-## 7. Explainable AI: Game-Theoretic Tree SHAP
+## 7. Explainable AI: Game-Theoretic Tree SHAP (Feature Importance & Attribution)
 
-To ensure clinical transparency and public trust, the model integrates **Tree SHAP (SHapley Additive exPlanations)** based on cooperative game theory:
+To ensure clinical transparency, scientific validation, and public trust, the model integrates **Tree SHAP (SHapley Additive exPlanations)** based on cooperative game theory.
 
-### 7.1 Top Global Predictive Drivers:
-| Rank | Feature Name | Mean Absolute SHAP Impact & Domain Role |
-| :---: | :--- | :--- |
-| **1** | `us_aqi` (Current Baseline) | **Mean $|\text{SHAP}| \approx 19.77$**: Establishes baseline atmospheric loading and strong short-term persistence. |
-| **2** | `pm2_5` (Fine Particulate Matter) | **Mean $|\text{SHAP}| \approx 5.02$**: Primary chemical driver of the US EPA AQI formula and health risk classifications. |
-| **3** | `pm2_5_rolling_mean_24h` | **Mean $|\text{SHAP}| \approx 3.85$**: Captures 24-hour cumulative aerosol saturation across the urban canopy. |
-| **4** | `pm10` (Coarse Respirable Dust) | **Mean $|\text{SHAP}| \approx 1.04$**: Major contributor during dry seasons and arid regional dust transport events. |
-| **5** | `day` & `month` (Seasonal / Temporal) | **Mean $|\text{SHAP}| \approx 0.70$**: Captures annual crop burning seasonality and winter inversion cycles. |
-| **6** | `dust` & `aerosol_optical_depth` | **Mean $|\text{SHAP}| \approx 0.65$**: Quantifies column-integrated solar extinction and particulate loading. |
-| **7** | `temperature_2m` & `ventilation_index` | **Mean $|\text{SHAP}| \approx 0.48$**: Controls vertical convective mixing and boundary layer height. |
+### 💡 What is SHAP and What Does "Forecast Impact" Mean?
+* **How SHAP Works**: Traditional feature importance only tells you *if* a feature is used, but not *how much* it actually alters the forecast. SHAP solves this by assigning each feature a fair credit value (in exact units of the prediction target) for each individual forecast.
+* **Interpretation of Impact (AQI Points)**: The impact values below represent the **Mean Absolute SHAP Impact**, which measures the **average number of AQI points that a specific feature shifts the model's prediction up or down**.
+  * For example, an impact of **±19.8 AQI points** means that knowing the current AQI changes the final 3-day forecast by nearly 20 AQI points on average compared to a generic baseline prediction.
+
+### 7.1 Top Global Predictive Drivers
+
+| Rank | Predictive Feature | Average Forecast Impact | Physical Atmospheric Role & Why It Matters |
+| :---: | :--- | :---: | :--- |
+| **1** | `us_aqi` (Current Observed AQI) | **±19.8 AQI points** | **Strongest Short-Term Anchor**: Atmospheric pollution possesses massive inertia; the current pollution level provides the critical baseline state for next-day air quality. |
+| **2** | `pm2_5` (Fine Particulate Matter) | **±5.0 AQI points** | **Primary Chemical Hazard**: Fine aerosols ($< 2.5\mu\text{m}$) are the dominant factor determining the official US EPA AQI breakpoints and health risk categories. |
+| **3** | `pm2_5_rolling_mean_24h` | **±3.8 AQI points** | **24-Hour Canopy Saturation**: Smooths out transient hourly fluctuations to measure true cumulative particulate saturation across the urban airshed. |
+| **4** | `pm10` (Coarse Respirable Dust) | **±1.0 AQI points** | **Arid Regional & Road Dust**: Captures heavy dust storms and road traffic resuspension, particularly active during dry transitional seasons. |
+| **5** | `day` & `month` (Calendar & Season) | **±0.7 AQI points** | **Annual Inversion & Smog Seasonality**: Captures high-risk seasonal windows such as October–November agricultural crop residue burning and winter temperature inversions. |
+| **6** | `dust` & `aerosol_optical_depth` | **±0.65 AQI points** | **Column Optical Extinction**: Measures the total column aerosol loading in the atmosphere and transboundary dust plumes transported from arid neighboring zones. |
+| **7** | `temperature_2m` & `ventilation_index` | **±0.48 AQI points** | **Atmospheric Dispersion & Inversion**: Governs thermal buoyancy, vertical convection, and whether stagnant surface air traps pollutants near ground level. |
 
 ### 7.2 High-Performance Native C++ Tree SHAP Engine
 In production cloud environments, generic Python SHAP wrappers can encounter thread timeouts on single-row inference. The dashboard executes **XGBoost's native internal C++ Tree SHAP engine** (`get_booster().predict(..., pred_contribs=True)`), computing exact local Shapley values in **$< 5$ milliseconds** with zero external dependencies.
@@ -280,9 +286,9 @@ Validation against live online observations from Open-Meteo and ECMWF CAMS confi
 
 | Target City | Current AQI (Model vs Live) | +24h Forecast vs Live Actual | +72h Forecast vs Live Actual | EPA Category Alignment |
 | :--- | :--- | :--- | :--- | :---: |
-| **Karachi** | Model: **58.0** \| Live: **57.0** *(Diff: 1.0 pt 🎯)* | Model: **66.5** \| Live: **62.0** *(Diff: 4.5 pts)* | Model: **86.0** \| Live: **63.0** *(Diff: 23.0 pts)* | ✅ **100% Moderate Match** |
-| **Lahore** | Model: **156.0** \| Live: **154.0** *(Diff: 2.0 pts 🎯)* | Model: **152.4** \| Live: **152.0** *(Diff: 0.4 pts 🎯)* | Model: **160.6** \| Live: **137.0** *(Diff: 23.6 pts)* | ✅ **100% Unhealthy Match** |
-| **Islamabad** | Model: **97.0** \| Live: **101.0** *(Diff: 4.0 pts 🎯)* | Model: **106.5** \| Live: **89.0** *(Diff: 17.5 pts)* | Model: **113.9** \| Live: **109.0** *(Diff: 4.9 pts 🎯)* | ✅ **100% Sensitive Match** |
+| **Karachi** | Model: **58.0** vs Live: **57.0** *(Diff: 1.0 pt 🎯)* | Model: **66.5** vs Live: **62.0** *(Diff: 4.5 pts)* | Model: **86.0** vs Live: **63.0** *(Diff: 23.0 pts)* | ✅ **100% Moderate Match** |
+| **Lahore** | Model: **156.0** vs Live: **154.0** *(Diff: 2.0 pts 🎯)* | Model: **152.4** vs Live: **152.0** *(Diff: 0.4 pts 🎯)* | Model: **160.6** vs Live: **137.0** *(Diff: 23.6 pts)* | ✅ **100% Unhealthy Match** |
+| **Islamabad** | Model: **97.0** vs Live: **101.0** *(Diff: 4.0 pts 🎯)* | Model: **106.5** vs Live: **89.0** *(Diff: 17.5 pts)* | Model: **113.9** vs Live: **109.0** *(Diff: 4.9 pts 🎯)* | ✅ **100% Sensitive Match** |
 
 ---
 
