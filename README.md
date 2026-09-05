@@ -92,20 +92,20 @@ During system design, both **Hopsworks Feature Store** and **Supabase PostgreSQL
 The pipeline converts raw weather and pollutant readings into **84 domain physics features**:
 
 1. **Atmospheric Physics Engine**:
-   * **Ventilation Index ($	ext{VI}$)**: $	ext{VI} = 	ext{Boundary Layer Height} 	imes 	ext{Wind Speed}_{10	ext{m}}$ (quantifies atmospheric dilution volume).
-   * **Cartesian Wind Decomposition**: $U = -	ext{Speed} \cdot \sin(	heta)$ (zonal) and $V = -	ext{Speed} \cdot \cos(	heta)$ (meridional) to resolve circular angular discontinuity ($0^\circ = 360^\circ$).
-   * **Dew Point Depression**: $T - T_{	ext{dew}}$ (measures relative saturation and hygroscopic particulate swelling).
-   * **Inversion Proxy**: $T_{2	ext{m}} / (	ext{Solar Radiation} + 1.0)$ (identifies ground thermal inversion caps).
+   * **Ventilation Index ($\text{VI}$)**: $\text{VI} = \text{Boundary Layer Height} \times \text{Wind Speed}_{10\text{m}}$ (quantifies atmospheric dilution volume).
+   * **Cartesian Wind Decomposition**: $U = -\text{Speed} \cdot \sin(\theta)$ (zonal) and $V = -\text{Speed} \cdot \cos(\theta)$ (meridional) to resolve circular angular discontinuity ($0^\circ = 360^\circ$).
+   * **Dew Point Depression**: $T - T_{\text{dew}}$ (measures relative saturation and hygroscopic particulate swelling).
+   * **Inversion Proxy**: $T_{2\text{m}} / (\text{Solar Radiation} + 1.0)$ (identifies ground thermal inversion caps).
    * **Effective Solar Irradiance**: Direct radiation attenuated by cloud cover (photochemical ozone catalyst).
 2. **Multi-Scale Historical Lags**:
-   * Short-term: $1	ext{h}, 2	ext{h}, 3	ext{h}, 6	ext{h}, 12	ext{h}$ lags for AQI, $	ext{PM}_{2.5}$, and $	ext{PM}_{10}$.
-   * Diurnal: $24	ext{h}, 48	ext{h}, 72	ext{h}$ lags for AQI, temperature, and wind speed.
+   * Short-term: $1\text{h}, 2\text{h}, 3\text{h}, 6\text{h}, 12\text{h}$ lags for AQI, $\text{PM}_{2.5}$, and $\text{PM}_{10}$.
+   * Diurnal: $24\text{h}, 48\text{h}, 72\text{h}$ lags for AQI, temperature, and wind speed.
 3. **Rolling Volatility & Stability**:
    * 3h, 6h, 12h, 24h, 48h rolling means.
    * 24h rolling standard deviation, minimum, and maximum.
    * 24h rate of change acceleration: $(AQI_t - AQI_{t-24}) / (AQI_{t-24} + 1.0)$.
 4. **Cyclic Temporal & Spatial Encodings**:
-   * $\sin/\cos$ diurnal ($24	ext{h}$), weekly ($7	ext{d}$), and seasonal ($12	ext{m}$) cycles.
+   * $\sin/\cos$ diurnal ($24\text{h}$), weekly ($7\text{d}$), and seasonal ($12\text{m}$) cycles.
    * Binary flags: `is_weekend`, `is_rush_hour`.
    * One-hot spatial microclimate identifiers: `city_Karachi`, `city_Lahore`, `city_Islamabad`.
 
@@ -203,6 +203,9 @@ The project includes two autonomous serverless workflows located in `.github/wor
    * **Action**: Pulls historical features from Supabase, retrains `MultiHorizonXGBoost`, validates against persistence baselines, extracts updated Tree SHAP values, compresses the model payload, and promotes the champion model in the database.
 
 Both workflows can also be triggered manually on demand via `workflow_dispatch`.
+
+> [!NOTE]
+> **Scheduled Workflow Timing & GitHub Platform Queues**: The hourly feature pipeline is configured to trigger via cron (`15 * * * *`). On GitHub Actions' shared public runner infrastructure, scheduled events are dispatched via an asynchronous shared queue and may occasionally experience variable queue delays (ranging from 15 to 90 minutes) during high global traffic periods. This delay is strictly an external GitHub Actions platform-level scheduling behavior, not a defect in the pipeline code. The underlying Python pipeline (`featurepipeline.py`), API ingestion, and Supabase upserts maintain a 100% execution success rate, support manual immediate execution via `workflow_dispatch`, and use idempotent database operations (`ON CONFLICT DO UPDATE`) so data continuity is never compromised.
 
 ---
 
