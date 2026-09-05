@@ -130,6 +130,12 @@ During system design, both **Hopsworks Feature Store** and **Supabase PostgreSQL
 | **CI/CD Runner Compatibility** | Large client SDKs with heavy dependencies causing build timeouts in lightweight serverless runners. | **Lightweight PostgREST client**: Connects in milliseconds across GitHub Actions runners and Streamlit Cloud with zero bloat. |
 | **Operational Maintenance & Cost** | Resource-intensive; high idle cloud costs and cluster maintenance overhead. | **Complete ACID Integrity**: Full relational SQL power, foreign keys, automated backups, and cost-effective standard tiers. |
 
+### 5.1 Cloud Production Model Registry
+The screenshot below illustrates the live production Supabase `model_registry` table, capturing model versioning (from initial baseline experiments through `aqi_forecast_xgboost v16`), validation RMSE scores, JSONB parameter sets, top-25 global SHAP attributions, and compressed Base64 serialized model payloads:
+
+![Supabase PostgreSQL Model Registry Table](assets/supabase_model_registry.png)
+*Figure 5.1: Live Supabase PostgreSQL `model_registry` table in production, tracking model versions (v1 through v16), validation metrics (`avg_rmse`, JSONB metrics), top-25 SHAP feature importances, and compressed Base64 model binary payloads.*
+
 ---
 
 ## 6. Model Benchmarking, Evaluation Metrics & Rationale for XGBoost
@@ -207,6 +213,12 @@ The system operates autonomously in production via two dedicated serverless GitH
    * **Trigger**: Scheduled cron every 24 hours at midnight UTC (`0 0 * * *`).
    * **Execution**: Pulls historical records from Supabase, retrains `MultiHorizonXGBoost`, validates against persistence baselines, generates updated 25-feature SHAP summaries, serializes the model to compressed Base64, and updates the champion model in `model_registry`.
 
+### 8.1 Automated Workflow Execution Telemetry
+The screenshot below demonstrates the continuous, autonomous execution history of the production CI/CD workflows on GitHub Actions, showing 52+ consecutive successful runs without human intervention:
+
+![GitHub Actions CI/CD Pipeline Execution History](assets/github_actions_pipeline.png)
+*Figure 8.1: Live execution history of automated GitHub Actions pipelines showing 52+ consecutive successful scheduled runs for both the Hourly Live Feature Pipeline (cron: `15 * * * *`) and the Daily Model Retraining Pipeline (cron: `0 0 * * *`).*
+
 ---
 
 ## 9. Interactive Streamlit Dashboard Architecture
@@ -230,6 +242,12 @@ The production dashboard is hosted live on **Streamlit Community Cloud** ([https
   * **Tab 3: 🔬 Exploratory Data Analysis (EDA)**: 7-day individual pollutant trends ($	ext{PM}_{2.5}, 	ext{PM}_{10}, 	ext{NO}_2, 	ext{SO}_2, 	ext{O}_3, 	ext{CO}$), meteorological correlation heatmap, and 24h diurnal pattern.
   * **Tab 4: 📊 Model Performance & Benchmarks**: Full benchmark evaluation tables and per-city metrics.
   * **Tab 5: 📋 Live Feature Store Inspector**: Real-time searchable table queried directly from Supabase PostgreSQL.
+
+### 9.1 Live Production Dashboard Interface
+The screenshot below shows the live operational web interface running on Streamlit Community Cloud, featuring real-time Karachi atmospheric telemetry in the sidebar, EPA Health Alert Advisory, 4-card metric KPI ribbon, active champion model tag (`aqi_forecast_xgboost v16`), and interactive 3-day forecast trajectory:
+
+![Streamlit Production Web Application Dashboard](assets/streamlit_dashboard.png)
+*Figure 9.1: Live Streamlit production dashboard showing Karachi live telemetry, EPA health advisory banner, 4-card KPI ribbon (+24h, +48h, +72h forecasts), active champion model `aqi_forecast_xgboost v16`, and Tab 1 continuous 3-day forecasting trends.*
 
 ---
 
